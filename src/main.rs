@@ -1,4 +1,3 @@
-use std::env;
 use ic_agent::{Agent, Identity};
 use ic_types::Principal;
 
@@ -10,41 +9,53 @@ mod split_new_withdrawal_neurons;
 
 // TODO: Error handling throughout
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Error> {
     let ic_url = get_ic_url();
-    let agent = create_agent(&ic_url);
+    let agent = create_agent(&ic_url).await;
 
     let deposits_canister_id = Principal::from_text("your_deposits_canister_id_here").unwrap();
+    let deposits_address = address_from_principal(&deposits_canister_id);
     let d = deposits::Agent {
-        agent,
+        agent: &agent,
         canister_id: deposits_canister_id,
     };
 
     let governance_canister_id = Principal::from_text("your_governance_canister_id_here").unwrap();
     let g = governance::Agent {
-        agent,
+        agent: &agent,
         canister_id: governance_canister_id,
     };
 
     // Disburse any pending neurons
-    disburse::run(&d, &g).await;
+    disburse::run(&g, &deposits_address).await.map_err(Error::Governance)?;
 
-    let result = canister_updates::run(&d).await;
-    let neurons_to_split = match result {
-        Ok(n) => n,
-        Err(err) => {
-            // TODO: Error handling
-            eprintln!(format!("Error: {:?}", err));
-            return;
-        }
-    }
+    let neurons_to_split = canister_updates::run(&d).await.map_err(Error::Deposits)?;
 
+    // List of hotkeys to add to each new neuron
+    let hotkeys = vec![deposits_canister_id];
 
-    split_new_withdrawal_neurons::run(&d, &g, neurons_to_split).await;
+    // TODO Error handling
+    split_new_withdrawal_neurons::run(&g, neurons_to_split, hotkeys).await.map_err(Error::Governance)?;
+
+    Ok(())
 }
 
-async fn create_agent() -> Agent {
+#[derive(Debug)]
+pub enum Error {
+    Deposits(deposits::Error),
+    Governance(governance::Error),
+}
+
+async fn create_agent(ic_url: &str) -> Agent {
     // TODO: Set up the agent with the appropriate configuration and identity
     // Refer to the ic_agent library documentation for details
+    todo!("create_agent");
 }
 
+fn get_ic_url() -> String {
+    todo!("get_ic_url");
+}
+
+fn address_from_principal(p: &Principal) -> Vec<u8> {
+    todo!("address_from_principal");
+}

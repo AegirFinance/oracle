@@ -1,13 +1,8 @@
-use std::env;
-use ic_agent::{Agent, Identity};
-use ic_types::Principal;
-
 use crate::deposits;
-use crate::governance;
 
 // TODO: Could we set auto-merge-maturity and simplify this by just tracking the balance? The
 // balance shouldn't change unless we flush through, and it would simplify the job.
-pub async fn run(d: &deposits::Service) -> Result<Vec<(u64, u64)>, _> {
+pub async fn run(d: &impl deposits::Service) -> Result<Vec<(u64, u64)>, deposits::Error> {
     // This will do all of the following in the canister:
     //
     // 1. Garbage-collect disbursed neurons from the withdrawal module tracking
