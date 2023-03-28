@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 #[async_trait]
 pub trait Service {
     async fn refresh_neurons_and_apply_interest(&self) -> Result<Vec<(u64, u64)>, Error>;
@@ -10,8 +12,8 @@ pub enum Error {
 }
 
 pub struct Agent<'a> {
-    agent: &'a ic_agent::Agent,
-    canister_id: ic_types::Principal,
+    pub agent: &'a ic_agent::Agent,
+    pub canister_id: ic_types::Principal,
 }
 
 #[async_trait]

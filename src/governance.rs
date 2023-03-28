@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use ic_types::Principal;
 
 #[async_trait]
@@ -16,8 +17,8 @@ pub enum Error {
 }
 
 pub struct Agent<'a> {
-    agent: &'a ic_agent::Agent,
-    canister_id: ic_types::Principal,
+    pub agent: &'a ic_agent::Agent,
+    pub canister_id: ic_types::Principal,
 }
 
 #[async_trait]
