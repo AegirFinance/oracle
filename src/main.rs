@@ -51,13 +51,13 @@ impl Args {
 
     fn get_auth(&self, handle: tokio::runtime::Handle) -> anyhow::Result<identity::AuthInfo> {
         // Get PEM from the file if provided, or try to convert from the seed file
-        let local = match self.private_pem {
+        let local = match &self.private_pem {
             Some(pem_file) => identity::AuthInfo::PemFile(read_file(pem_file, "PEM")?),
             None => identity::AuthInfo::NoAuth,
         };
         // Wrap this in a canister-signer
         Ok(identity::AuthInfo::Canister(identity::CanisterInfo {
-            signer: Principal::from_text(self.signing_canister)?,
+            signer: Principal::from_text(&self.signing_canister)?,
             local: Arc::from(identity::get_identity(&local)?),
             fetch_root_key: self.fetch_root_key(),
             handle,

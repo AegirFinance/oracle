@@ -134,8 +134,8 @@ pub struct CfNeuron {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct CfParticipant {
-    hotkey_principal: String,
-    cf_neurons: Vec<CfNeuron>,
+    pub hotkey_principal: String,
+    pub cf_neurons: Vec<CfNeuron>,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -217,7 +217,7 @@ pub struct Spawn {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct Split {
-    amount_e8s: u64,
+    pub amount_e8s: u64,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -237,7 +237,7 @@ pub struct ClaimOrRefreshNeuronFromAccount {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub enum By {
-    NeuronIdOrSubaccount {},
+    NeuronIdOrSubaccount,
     MemoAndController(ClaimOrRefreshNeuronFromAccount),
     Memo(u64),
 }
@@ -245,37 +245,37 @@ pub enum By {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ClaimOrRefresh {
-    by: Option<By>,
+    pub by: Option<By>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct RemoveHotKey {
-    hot_key_to_remove: Option<candid::Principal>,
+    pub hot_key_to_remove: Option<candid::Principal>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct AddHotKey {
-    new_hot_key: Option<candid::Principal>,
+    pub new_hot_key: Option<candid::Principal>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ChangeAutoStakeMaturity {
-    requested_setting_for_auto_stake_maturity: bool,
+    pub requested_setting_for_auto_stake_maturity: bool,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct IncreaseDissolveDelay {
-    additional_dissolve_delay_seconds: u32,
+    pub additional_dissolve_delay_seconds: u32,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct SetDissolveTimestamp {
-    dissolve_timestamp_seconds: u64,
+    pub dissolve_timestamp_seconds: u64,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -284,66 +284,66 @@ pub enum Operation {
     RemoveHotKey(RemoveHotKey),
     AddHotKey(AddHotKey),
     ChangeAutoStakeMaturity(ChangeAutoStakeMaturity),
-    StopDissolving {},
-    StartDissolving {},
+    StopDissolving,
+    StartDissolving,
     IncreaseDissolveDelay(IncreaseDissolveDelay),
-    JoinCommunityFund {},
-    LeaveCommunityFund {},
+    JoinCommunityFund,
+    LeaveCommunityFund,
     SetDissolveTimestamp(SetDissolveTimestamp),
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct Configure {
-    operation: Option<Operation>,
+    pub operation: Option<Operation>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct RegisterVote {
-    vote: i32,
-    proposal: Option<NeuronId>,
+    pub vote: i32,
+    pub proposal: Option<NeuronId>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct Merge {
-    source_neuron_id: Option<NeuronId>,
+    pub source_neuron_id: Option<NeuronId>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct DisburseToNeuron {
-    dissolve_delay_seconds: u64,
-    kyc_verified: bool,
-    amount_e8s: u64,
-    new_controller: Option<candid::Principal>,
-    nonce: u64,
+    pub dissolve_delay_seconds: u64,
+    pub kyc_verified: bool,
+    pub amount_e8s: u64,
+    pub new_controller: Option<candid::Principal>,
+    pub nonce: u64,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct StakeMaturity {
-    percentage_to_stake: Option<u32>,
+    pub percentage_to_stake: Option<u32>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct MergeMaturity {
-    percentage_to_merge: u32,
+    pub percentage_to_merge: u32,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct Amount {
-    e8s: u64,
+    pub e8s: u64,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct Disburse {
-    to_account: Option<AccountIdentifier>,
-    amount: Option<Amount>,
+    pub to_account: Option<AccountIdentifier>,
+    pub amount: Option<Amount>,
 }
 
 #[derive(candid::CandidType, candid::Deserialize)]
@@ -374,9 +374,9 @@ pub enum NeuronIdOrSubaccount {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ManageNeuron {
-    id: Option<NeuronId>,
-    command: Option<Command>,
-    neuron_id_or_subaccount: Option<NeuronIdOrSubaccount>,
+    pub id: Option<NeuronId>,
+    pub command: Option<Command>,
+    pub neuron_id_or_subaccount: Option<NeuronIdOrSubaccount>,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -535,7 +535,7 @@ pub enum Command_2 {
     Configure(Configure),
     Merge(Merge),
     DisburseToNeuron(DisburseToNeuron),
-    SyncCommand {},
+    SyncCommand,
     ClaimOrRefreshNeuron(ClaimOrRefresh),
     MergeMaturity(MergeMaturity),
     Disburse(Disburse),
@@ -590,22 +590,22 @@ pub struct Neuron {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct Governance {
-    default_followees: Vec<(i32, Followees)>,
-    most_recent_monthly_node_provider_rewards: Option<MostRecentMonthlyNodeProviderRewards>,
-    maturity_modulation_last_updated_at_timestamp_seconds: Option<u64>,
-    wait_for_quiet_threshold_seconds: u64,
-    metrics: Option<GovernanceCachedMetrics>,
-    node_providers: Vec<NodeProvider>,
-    cached_daily_maturity_modulation_basis_points: Option<i32>,
-    economics: Option<NetworkEconomics>,
-    spawning_neurons: Option<bool>,
-    latest_reward_event: Option<RewardEvent>,
-    to_claim_transfers: Vec<NeuronStakeTransfer>,
-    short_voting_period_seconds: u64,
-    proposals: Vec<(u64, ProposalData)>,
-    in_flight_commands: Vec<(u64, NeuronInFlightCommand)>,
-    neurons: Vec<(u64, Neuron)>,
-    genesis_timestamp_seconds: u64,
+    pub default_followees: Vec<(i32, Followees)>,
+    pub most_recent_monthly_node_provider_rewards: Option<MostRecentMonthlyNodeProviderRewards>,
+    pub maturity_modulation_last_updated_at_timestamp_seconds: Option<u64>,
+    pub wait_for_quiet_threshold_seconds: u64,
+    pub metrics: Option<GovernanceCachedMetrics>,
+    pub node_providers: Vec<NodeProvider>,
+    pub cached_daily_maturity_modulation_basis_points: Option<i32>,
+    pub economics: Option<NetworkEconomics>,
+    pub spawning_neurons: Option<bool>,
+    pub latest_reward_event: Option<RewardEvent>,
+    pub to_claim_transfers: Vec<NeuronStakeTransfer>,
+    pub short_voting_period_seconds: u64,
+    pub proposals: Vec<(u64, ProposalData)>,
+    pub in_flight_commands: Vec<(u64, NeuronInFlightCommand)>,
+    pub neurons: Vec<(u64, Neuron)>,
+    pub genesis_timestamp_seconds: u64,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -703,20 +703,20 @@ pub struct ProposalInfo {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ListKnownNeuronsResponse {
-    known_neurons: Vec<KnownNeuron>,
+    pub known_neurons: Vec<KnownNeuron>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ListNeurons {
-    neuron_ids: Vec<u64>,
-    include_neurons_readable_by_caller: bool,
+    pub neuron_ids: Vec<u64>,
+    pub include_neurons_readable_by_caller: bool,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ListNeuronsResponse {
-    neuron_infos: Vec<(u64, NeuronInfo)>,
+    pub neuron_infos: Vec<(u64, NeuronInfo)>,
     pub full_neurons: Vec<Neuron>,
 }
 
@@ -745,13 +745,13 @@ pub struct ListProposalInfoResponse {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct SpawnResponse {
-    created_neuron_id: Option<NeuronId>,
+    pub created_neuron_id: Option<NeuronId>,
 }
 
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ClaimOrRefreshResponse {
-    refreshed_neuron_id: Option<NeuronId>,
+    pub refreshed_neuron_id: Option<NeuronId>,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -786,11 +786,11 @@ pub enum Command_1 {
     Error(GovernanceError),
     Spawn(SpawnResponse),
     Split(SpawnResponse),
-    Follow {},
+    Follow,
     ClaimOrRefresh(ClaimOrRefreshResponse),
-    Configure {},
-    RegisterVote {},
-    Merge {},
+    Configure,
+    RegisterVote,
+    Merge,
     DisburseToNeuron(SpawnResponse),
     MakeProposal(MakeProposalResponse),
     StakeMaturity(StakeMaturityResponse),
@@ -801,7 +801,7 @@ pub enum Command_1 {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ManageNeuronResponse {
-    command: Option<Command_1>,
+    pub command: Option<Command_1>,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -814,7 +814,7 @@ pub struct Committed {
 #[derive(Clone, PartialEq)]
 pub enum Result_7 {
     Committed(Committed),
-    Aborted {},
+    Aborted,
 }
 
 #[derive(CandidType, Deserialize)]

@@ -143,7 +143,7 @@ impl Service for Agent<'_> {
             self.manage_neuron(
                 new_id,
                 Command::Configure(Configure {
-                    operation: Some(Operation::StartDissolving {}),
+                    operation: Some(Operation::StartDissolving),
                 }),
             )
             .await?;
