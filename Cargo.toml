@@ -10,10 +10,14 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.34"
 async-trait = "0.1.68"
 candid = "0.8.2"
-ic-agent = "0.21.0"
+ic-agent = "0.23.2"
 ic-types = "0.4.1"
+ic-base-types = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
+icp-ledger = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
+ledger-canister = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0.130", features = ["derive"] }
 serde_bytes = "0.11.2"

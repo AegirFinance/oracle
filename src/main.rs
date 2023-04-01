@@ -1,20 +1,21 @@
+use anyhow::anyhow;
 use ic_agent::{Agent, Identity};
-use ic_types::Principal;
+use ic_base_types::PrincipalId;
+use candid::Principal;
+use icp_ledger::AccountIdentifier;
+use std::{convert::TryFrom, env, time::Duration};
 
 mod deposits;
 mod governance;
-mod disburse;
-mod canister_updates;
-mod split_new_withdrawal_neurons;
 
 // TODO: Error handling throughout
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> anyhow::Result<()> {
     let ic_url = get_ic_url();
-    let agent = create_agent(&ic_url).await;
+    let agent = create_agent(&ic_url).await?;
 
     let deposits_canister_id = Principal::from_text("your_deposits_canister_id_here").unwrap();
-    let deposits_address = address_from_principal(&deposits_canister_id);
+    let deposits_address = get_account_id(&deposits_canister_id)?;
     let d = deposits::Agent {
         agent: &agent,
         canister_id: deposits_canister_id,
@@ -27,35 +28,50 @@ async fn main() -> Result<(), Error> {
     };
 
     // Disburse any pending neurons
-    disburse::run(&g, &deposits_address).await.map_err(Error::Governance)?;
+    governance::Service::disburse_neurons(&g, &deposits_address).await?;
 
-    let neurons_to_split = canister_updates::run(&d).await.map_err(Error::Deposits)?;
+    // Run canister updates and figure out which neurons to split
+    let neurons_to_split = deposits::Service::refresh_neurons_and_apply_interest(&d).await?;
 
     // List of hotkeys to add to each new neuron
     let hotkeys = vec![deposits_canister_id];
 
     // TODO Error handling
-    split_new_withdrawal_neurons::run(&g, neurons_to_split, hotkeys).await.map_err(Error::Governance)?;
+    governance::Service::split_new_withdrawal_neurons(&g, neurons_to_split, hotkeys).await?;
 
     Ok(())
 }
 
-#[derive(Debug)]
-pub enum Error {
-    Deposits(deposits::Error),
-    Governance(governance::Error),
+// TODO: Set up the agent with the appropriate configuration and identity
+async fn create_agent(ic_url: &str) -> anyhow::Result<Agent> {
+    let timeout = Duration::from_secs(60 * 5);
+    let agent = Agent::builder()
+        .with_transport(
+            ic_agent::agent::http_transport::ReqwestHttpReplicaV2Transport::create({
+                get_ic_url()
+            })?,
+        )
+        .with_ingress_expiry(Some(timeout))
+        //.with_boxed_identity(get_identity(auth)?)
+        .build()
+        .map_err(|err| anyhow!(err))?;
+
+    if ic_url != IC_URL {
+        // Not on the main net, we need to fetch the root key.
+        agent.fetch_root_key().await?;
+    }
+
+    Ok(agent)
 }
 
-async fn create_agent(ic_url: &str) -> Agent {
-    // TODO: Set up the agent with the appropriate configuration and identity
-    // Refer to the ic_agent library documentation for details
-    todo!("create_agent");
-}
+const IC_URL: &str = "https://ic0.app";
 
 fn get_ic_url() -> String {
-    todo!("get_ic_url");
+    env::var("IC_URL").unwrap_or_else(|_| IC_URL.to_string())
 }
 
-fn address_from_principal(p: &Principal) -> Vec<u8> {
-    todo!("address_from_principal");
+fn get_account_id(principal_id: &Principal) -> anyhow::Result<AccountIdentifier> {
+    let base_types_principal =
+        PrincipalId::try_from(principal_id.as_slice()).map_err(|err| anyhow!(err))?;
+    Ok(AccountIdentifier::new(base_types_principal, None))
 }
