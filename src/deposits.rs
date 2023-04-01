@@ -5,9 +5,6 @@ use serde::Deserialize;
 
 #[async_trait]
 pub trait Service {
-    // TODO: Could we set auto-merge-maturity and simplify this by just tracking the balance? The
-    // balance shouldn't change unless we flush through, and it would simplify the job.
-    //
     // This will do all of the following in the canister:
     //
     // 1. Garbage-collect disbursed neurons from the withdrawal module tracking
