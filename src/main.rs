@@ -66,6 +66,7 @@ impl Args {
 }
 
 // TODO: Error handling throughout
+// TODO: Logging throughout
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
