@@ -1951,6 +1951,7 @@ dependencies = [
  "async-trait",
  "candid",
  "clap",
+ "comparable",
  "crossbeam",
  "ic-agent",
  "ic-base-types",
