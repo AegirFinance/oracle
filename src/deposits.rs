@@ -50,9 +50,7 @@ pub struct RefreshNeuronsAndApplyInterestResult {
 
 #[async_trait]
 impl Service for Agent<'_> {
-    async fn refresh_neurons_and_apply_interest(
-        &self,
-    ) -> anyhow::Result<Vec<(u64, u64)>> {
+    async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64)>> {
         let response = self
             .agent
             .update(&self.canister_id, "refresh_neurons_and_apply_interest")

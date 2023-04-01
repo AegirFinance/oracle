@@ -1,9 +1,14 @@
 use anyhow::anyhow;
+use candid::Principal;
+
 use ic_agent::{Agent, Identity};
 use ic_base_types::PrincipalId;
-use candid::Principal;
 use icp_ledger::AccountIdentifier;
-use std::{convert::TryFrom, env, time::Duration};
+use std::{
+    convert::TryFrom,
+    env,
+    time::{Duration, SystemTime},
+};
 
 mod deposits;
 mod governance;
@@ -27,8 +32,12 @@ async fn main() -> anyhow::Result<()> {
         canister_id: governance_canister_id,
     };
 
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)?
+        .as_secs();
+
     // Disburse any pending neurons
-    governance::Service::disburse_neurons(&g, &deposits_address).await?;
+    governance::Service::disburse_neurons(&g, now, &deposits_address).await?;
 
     // Run canister updates and figure out which neurons to split
     let neurons_to_split = deposits::Service::refresh_neurons_and_apply_interest(&d).await?;

@@ -12,7 +12,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.34"
 async-trait = "0.1.68"
-candid = "0.8.2"
+candid = "0.8.4"
 ic-agent = "0.23.2"
 ic-types = "0.4.1"
 ic-base-types = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
