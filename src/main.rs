@@ -97,11 +97,8 @@ async fn main() -> anyhow::Result<()> {
     // Run canister updates and figure out which neurons to split
     let neurons_to_split = deposits::Service::refresh_neurons_and_apply_interest(&d).await?;
 
-    // List of hotkeys to add to each new neuron
-    let hotkeys = vec![deposits_canister_id];
-
     // TODO Error handling
-    governance::Service::split_new_withdrawal_neurons(&g, neurons_to_split, hotkeys).await?;
+    governance::Service::split_new_withdrawal_neurons(&g, neurons_to_split).await?;
 
     Ok(())
 }

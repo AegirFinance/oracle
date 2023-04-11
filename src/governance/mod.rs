@@ -6,7 +6,7 @@ use icp_ledger::AccountIdentifier;
 mod generated;
 
 use crate::governance::generated::{
-    AddHotKey, Command, Command_1, Configure, Disburse, DissolveState, ListNeurons,
+    Command, Command_1, Configure, Disburse, DissolveState, ListNeurons,
     ListNeuronsResponse, ManageNeuron, ManageNeuronResponse, Neuron, NeuronId,
     NeuronIdOrSubaccount, Operation, Spawn, SpawnResponse, Split,
 };
@@ -32,7 +32,6 @@ pub trait Service {
     async fn split_new_withdrawal_neurons(
         &self,
         neurons_to_split: Vec<(u64, u64)>,
-        hotkeys: Vec<Principal>,
     ) -> anyhow::Result<()>;
 }
 
@@ -108,7 +107,6 @@ impl Service for Agent<'_> {
     async fn split_new_withdrawal_neurons(
         &self,
         neurons_to_split: Vec<(u64, u64)>,
-        hotkeys: Vec<Principal>,
     ) -> anyhow::Result<()> {
         for (id, amount_e8s) in neurons_to_split.iter() {
             let ManageNeuronResponse{
@@ -124,20 +122,6 @@ impl Service for Agent<'_> {
             .await? else {
                 bail!("Unexpected response when splitting neuron {}", id)
             };
-
-            // Add the hotkeys
-            // TODO: Check if we need to do this or if they get carried over when splitting.
-            for hotkey in hotkeys.iter() {
-                self.manage_neuron(
-                    new_id,
-                    Command::Configure(Configure {
-                        operation: Some(Operation::AddHotKey(AddHotKey {
-                            new_hot_key: Some(hotkey.clone()),
-                        })),
-                    }),
-                )
-                .await?;
-            }
 
             // Start the new neuron dissolving
             self.manage_neuron(
