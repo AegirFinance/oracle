@@ -4,6 +4,7 @@ mod commands;
 mod deposits;
 mod governance;
 mod identity;
+mod ledger;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

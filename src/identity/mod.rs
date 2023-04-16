@@ -6,7 +6,10 @@ use ic_agent::{
     identity::{AnonymousIdentity, BasicIdentity, Secp256k1Identity},
     Identity,
 };
+use ic_base_types::PrincipalId;
+use icp_ledger::AccountIdentifier;
 use std::{
+    str::FromStr,
     sync::Arc,
     path::{Path, PathBuf},
     time::Duration,
@@ -85,6 +88,11 @@ impl IdentityArgs {
         }))
     }
 
+    pub fn account_id(&self) -> anyhow::Result<AccountIdentifier> {
+        PrincipalId::from_str(&self.signing_canister)
+            .map(|p| AccountIdentifier::new(p, None))
+            .map_err(|err| anyhow!(err))
+    }
 }
 
 

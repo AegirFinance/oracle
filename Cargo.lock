@@ -1959,6 +1959,7 @@ dependencies = [
  "icp-ledger",
  "k256",
  "ledger-canister",
+ "rand",
  "reqwest",
  "serde",
  "serde_bytes",

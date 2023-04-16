@@ -230,8 +230,8 @@ pub struct Follow {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ClaimOrRefreshNeuronFromAccount {
-    controller: Option<candid::Principal>,
-    memo: u64,
+    pub controller: Option<candid::Principal>,
+    pub memo: u64,
 }
 
 #[derive(CandidType, Deserialize)]
@@ -625,7 +625,7 @@ pub enum Result_1 {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct ClaimOrRefreshNeuronFromAccountResponse {
-    result: Option<Result_1>,
+    pub result: Option<Result_1>,
 }
 
 #[derive(CandidType, Deserialize)]

@@ -30,3 +30,4 @@ k256 = "0.11.4"
 clap = { version = "4.2.1", features = ["derive", "env"] }
 crossbeam = "0.8.2"
 comparable = "0.5.4"
+rand = "0.8.5"
