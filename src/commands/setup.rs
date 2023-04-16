@@ -68,13 +68,15 @@ impl Command {
         // - staking neurons
         // - withdrawal neurons
 
+        // deposits.setTotalMaturity(0)
+
         // Add the new neurons to the deposits canister
 
         // Transfer the remaining total amount to the deposits canister
+        let balance = icp.account_balance(self.identity.account_id()?).await?;
+        icp.transfer(d.account_id()?, balance - 10_000, 0).await?;
 
         // Pay out pending deposits and top up neurons by calling flushPendingDeposits
-
-        // deposits.setTotalMaturity(0)
 
 
         Ok(())
