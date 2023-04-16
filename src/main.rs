@@ -1,4 +1,3 @@
-use anyhow::{anyhow};
 use clap::Parser;
 
 mod commands;
@@ -17,7 +16,8 @@ struct Cli {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match &cli.command {
-        commands::Command::Daily(daily) => daily.run().await?,
+        commands::Command::Daily(c) => c.run().await?,
+        commands::Command::Setup(c) => c.run().await?,
     }
     Ok(())
 }

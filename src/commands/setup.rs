@@ -23,7 +23,6 @@ impl Command {
             agent: &agent,
             canister_id: deposits_canister_id,
         };
-        let deposits_address = d.account_id()?;
 
         let governance_canister_id = Principal::from_text(&self.identity.governance)?;
         let g = governance::Agent {
@@ -35,14 +34,19 @@ impl Command {
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_secs();
 
-        // Disburse any pending neurons
-        g.disburse_neurons(now, &deposits_address).await?;
+        // Check we have enough balance to do this job
+        // We should have enough to:
+        // - Buy out all neurons
+        // - Pay out all pending withdrawals
+        // - Match the deposits canister balance
 
-        // Run canister updates and figure out which neurons to split
-        let neurons_to_split = d.refresh_neurons_and_apply_interest().await?;
+        // Create the new neurons
 
-        // TODO Error handling
-        g.split_new_withdrawal_neurons(neurons_to_split).await?;
+        // Add the new neurons to the deposits canister
+
+        // Transfer the rest to the deposits canister
+
+        // Pay out pending deposits
 
         Ok(())
     }

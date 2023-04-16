@@ -1,6 +1,8 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
 use candid::{CandidType, Decode, Encode, Principal};
+use ic_base_types::PrincipalId;
+use icp_ledger::AccountIdentifier;
 use serde::Deserialize;
 
 #[async_trait]
@@ -30,6 +32,9 @@ pub trait Service {
     // This is all done in a single call, so that it is more atomic (not fully), and there is less
     // back-and-forth between this script and the canister.
     async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64)>>;
+
+    // Calculate the deposit canister's account id for disbursing neurons to
+    fn account_id(&self) -> anyhow::Result<AccountIdentifier>;
 }
 
 pub struct Agent<'a> {
@@ -58,5 +63,11 @@ impl Service for Agent<'_> {
         let result = Decode!(response.as_slice(), RefreshNeuronsAndApplyInterestResult)
             .map_err(|err| anyhow!(err))?;
         Ok(result.neurons_to_split)
+    }
+
+    fn account_id(&self) -> anyhow::Result<AccountIdentifier> {
+        PrincipalId::try_from(self.canister_id.as_slice())
+            .map(|p| AccountIdentifier::new(p, None))
+            .map_err(|err| anyhow!(err))
     }
 }
