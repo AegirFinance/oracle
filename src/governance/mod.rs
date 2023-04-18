@@ -36,7 +36,7 @@ pub trait Service {
     ) -> anyhow::Result<()>;
 
     async fn claim_neuron(&self, memo: u64) -> anyhow::Result<u64>;
-    async fn increase_neuron_delay(&self, neuron_id: u64, additional_dissolve_delay_seconds: u64) -> anyhow::Result<()>;
+    async fn increase_neuron_delay(&self, neuron_id: u64, additional_dissolve_delay_seconds: u32) -> anyhow::Result<()>;
     async fn add_hotkey(&self, neuron_id: u64, key: Principal) -> anyhow::Result<()>;
     async fn enable_auto_merge_maturity(&self, neuron_id: u64) -> anyhow::Result<()>;
 
@@ -165,7 +165,7 @@ impl Service for Agent<'_> {
         }
     }
 
-    async fn increase_neuron_delay(&self, neuron_id: u64, additional_dissolve_delay_seconds: u64) -> anyhow::Result<()> {
+    async fn increase_neuron_delay(&self, neuron_id: u64, additional_dissolve_delay_seconds: u32) -> anyhow::Result<()> {
             self.manage_neuron(
                 neuron_id,
                 Command::Configure(Configure {
