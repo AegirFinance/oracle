@@ -14,7 +14,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-use tokio::runtime::Runtime;
+use tokio::runtime::Handle;
 
 mod canister_identity;
 
@@ -72,8 +72,7 @@ impl IdentityArgs {
     }
 
     fn get_auth(&self) -> anyhow::Result<AuthInfo> {
-        let runtime = Runtime::new().expect("Unable to create a runtime");
-        let handle = runtime.handle().clone();
+        let handle = Handle::try_current().map_err(|e| anyhow!(e))?;
         // Get PEM from the file if provided, or try to convert from the seed file
         let local = match &self.private_pem {
             Some(pem_file) => AuthInfo::PemFile(read_file(pem_file, "PEM")?),
