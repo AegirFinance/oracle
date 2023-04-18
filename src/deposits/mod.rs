@@ -33,6 +33,11 @@ pub trait Service {
     // back-and-forth between this script and the canister.
     async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64)>>;
 
+    // Methods needed for the upgrade & setup
+    async fn reset_staking_neurons(&self, new_staking_neuron_ids: &Vec<u64>) -> anyhow::Result<()>;
+    async fn flush_pending_deposits(&self) -> anyhow::Result<()>;
+
+
     // Calculate the deposit canister's account id for disbursing neurons to
     fn account_id(&self) -> anyhow::Result<AccountIdentifier>;
 }
@@ -50,6 +55,14 @@ pub struct RefreshNeuronsAndApplyInterestResult {
     neurons_to_split: Vec<(u64, u64)>,
 }
 
+#[derive(CandidType)]
+pub struct ResetArgs {
+    ids: Vec<u64>,
+}
+
+#[derive(CandidType)]
+pub struct FlushPendingDepositsArgs { }
+
 #[async_trait]
 impl Service for Agent<'_> {
     async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64)>> {
@@ -63,6 +76,28 @@ impl Service for Agent<'_> {
         let result = Decode!(response.as_slice(), RefreshNeuronsAndApplyInterestResult)
             .map_err(|err| anyhow!(err))?;
         Ok(result.neurons_to_split)
+    }
+
+    async fn reset_staking_neurons(&self, new_staking_neuron_ids: &Vec<u64>) -> anyhow::Result<()> {
+        self
+            .agent
+            .update(&self.canister_id, "resetStakingNeurons")
+            .with_arg(&Encode!(&ResetArgs {
+                ids: new_staking_neuron_ids.clone(),
+            })?)
+            .call_and_wait()
+            .await?;
+        Ok(())
+    }
+
+    async fn flush_pending_deposits(&self) -> anyhow::Result<()> {
+        self
+            .agent
+            .update(&self.canister_id, "flushPendingDeposits")
+            .with_arg(&Encode!(&FlushPendingDepositsArgs { })?)
+            .call_and_wait()
+            .await?;
+        Ok(())
     }
 
     fn account_id(&self) -> anyhow::Result<AccountIdentifier> {
