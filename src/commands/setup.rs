@@ -83,8 +83,11 @@ impl Command {
             let neuron_id = g.claim_neuron(Some(identity_principal), memo).await?;
             println!("Created Neuron: {}", neuron_id);
             new_neuron_ids.push(neuron_id);
-            g.increase_neuron_delay(neuron_id, *delay).await?;
+            eprintln!("Adding hotkey: {}", deposits_principal);
             g.add_hotkey(neuron_id, deposits_principal).await?;
+            eprintln!("Increasing delay to: {}", *delay);
+            g.increase_neuron_delay(neuron_id, *delay).await?;
+            eprintln!("Enabling auto-merge-maturity");
             g.enable_auto_merge_maturity(neuron_id).await?;
         }
         println!("Created {} new neurons", new_neuron_ids.len());

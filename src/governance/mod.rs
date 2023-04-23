@@ -2,15 +2,19 @@ use anyhow::{anyhow, bail};
 use async_trait::async_trait;
 use candid::{CandidType, Decode, Deserialize, Encode, Principal};
 use ic_base_types::PrincipalId;
-use icp_ledger::AccountIdentifier;
-
-mod generated;
-
-use crate::governance::generated::{
-    AddHotKey, ChangeAutoStakeMaturity, Command, Command_1, Configure, Disburse, DissolveState, ListNeurons,
-    ClaimOrRefreshNeuronFromAccount, ClaimOrRefreshNeuronFromAccountResponse, IncreaseDissolveDelay, ListNeuronsResponse, ManageNeuron, ManageNeuronResponse,
-    Neuron, NeuronId, NeuronIdOrSubaccount, Operation, Result_1, SpawnResponse, Split,
+use ic_nns_common::pb::v1::{NeuronId};
+use ic_nns_governance::pb::v1::{
+    claim_or_refresh_neuron_from_account_response,
+    manage_neuron::{
+        configure::Operation, AddHotKey, ChangeAutoStakeMaturity, Command, Configure, Disburse,
+        IncreaseDissolveDelay, NeuronIdOrSubaccount, Split, StartDissolving,
+    },
+    manage_neuron_response::{self, SplitResponse},
+    neuron::DissolveState,
+    ClaimOrRefreshNeuronFromAccount, ClaimOrRefreshNeuronFromAccountResponse, ListNeurons,
+    ListNeuronsResponse, ManageNeuron, ManageNeuronResponse, Neuron,
 };
+use icp_ledger::AccountIdentifier;
 
 const ICP_FEE: u64 = 10_000;
 
@@ -36,7 +40,11 @@ pub trait Service {
     ) -> anyhow::Result<()>;
 
     async fn claim_neuron(&self, controller: Option<Principal>, memo: u64) -> anyhow::Result<u64>;
-    async fn increase_neuron_delay(&self, neuron_id: u64, additional_dissolve_delay_seconds: u32) -> anyhow::Result<()>;
+    async fn increase_neuron_delay(
+        &self,
+        neuron_id: u64,
+        additional_dissolve_delay_seconds: u32,
+    ) -> anyhow::Result<()>;
     async fn add_hotkey(&self, neuron_id: u64, key: Principal) -> anyhow::Result<()>;
     async fn enable_auto_merge_maturity(&self, neuron_id: u64) -> anyhow::Result<()>;
 
@@ -104,7 +112,9 @@ impl Service for Agent<'_> {
             self.manage_neuron(
                 id,
                 Command::Disburse(Disburse {
-                    to_account: Some(generated::AccountIdentifier{ hash: address.hash.try_into()? }),
+                    to_account: Some(icp_ledger::protobuf::AccountIdentifier {
+                        hash: address.hash.try_into()?,
+                    }),
                     amount: None, // all
                 }),
             )
@@ -119,7 +129,7 @@ impl Service for Agent<'_> {
     ) -> anyhow::Result<()> {
         for (id, amount_e8s) in neurons_to_split.iter() {
             let ManageNeuronResponse{
-                command: Some(Command_1::Split(SpawnResponse {
+                command: Some(manage_neuron_response::Command::Split(SplitResponse {
                     created_neuron_id: Some(NeuronId {
                         id: new_id,
                     }),
@@ -136,7 +146,7 @@ impl Service for Agent<'_> {
             self.manage_neuron(
                 new_id,
                 Command::Configure(Configure {
-                    operation: Some(Operation::StartDissolving),
+                    operation: Some(Operation::StartDissolving(StartDissolving {})),
                 }),
             )
             .await?;
@@ -148,57 +158,73 @@ impl Service for Agent<'_> {
         let response = self
             .agent
             .update(&self.canister_id, "claim_or_refresh_neuron_from_account")
-            .with_arg(&Encode!(&ClaimOrRefreshNeuronFromAccount { controller, memo })?)
+            .with_arg(&Encode!(&ClaimOrRefreshNeuronFromAccount {
+                controller: controller.map(PrincipalId),
+                memo,
+            })?)
             .call_and_wait()
             .await?;
 
-        let result = Decode!(response.as_slice(), ClaimOrRefreshNeuronFromAccountResponse).map_err(|err| anyhow!(err))?;
+        let result = Decode!(response.as_slice(), ClaimOrRefreshNeuronFromAccountResponse)
+            .map_err(|err| anyhow!(err))?;
         let Some(inner) = result.result else {
             bail!("Unexpected result claiming neuron, memo: {}", memo);
         };
         match inner {
-            Result_1::Error(err) => bail!("Error claiming neuron, memo: {}, err: {}", memo, err.error_message),
-            Result_1::NeuronId(NeuronId { id }) => Ok(id),
+            claim_or_refresh_neuron_from_account_response::Result::Error(err) => bail!(
+                "Error claiming neuron, memo: {}, err: {}",
+                memo,
+                err.error_message
+            ),
+            claim_or_refresh_neuron_from_account_response::Result::NeuronId(NeuronId { id }) => {
+                Ok(id)
+            }
         }
     }
 
-    async fn increase_neuron_delay(&self, neuron_id: u64, additional_dissolve_delay_seconds: u32) -> anyhow::Result<()> {
-            self.manage_neuron(
-                neuron_id,
-                Command::Configure(Configure {
-                    operation: Some(Operation::IncreaseDissolveDelay(IncreaseDissolveDelay {
-                        additional_dissolve_delay_seconds,
-                    })),
-                }),
-            )
-            .await?;
-            Ok(())
+    async fn increase_neuron_delay(
+        &self,
+        neuron_id: u64,
+        additional_dissolve_delay_seconds: u32,
+    ) -> anyhow::Result<()> {
+        self.manage_neuron(
+            neuron_id,
+            Command::Configure(Configure {
+                operation: Some(Operation::IncreaseDissolveDelay(IncreaseDissolveDelay {
+                    additional_dissolve_delay_seconds,
+                })),
+            }),
+        )
+        .await?;
+        Ok(())
     }
 
     async fn add_hotkey(&self, neuron_id: u64, key: Principal) -> anyhow::Result<()> {
-            self.manage_neuron(
-                neuron_id,
-                Command::Configure(Configure {
-                    operation: Some(Operation::AddHotKey(AddHotKey {
-                        new_hot_key: Some(key),
-                    })),
-                }),
-            )
-            .await?;
-            Ok(())
+        self.manage_neuron(
+            neuron_id,
+            Command::Configure(Configure {
+                operation: Some(Operation::AddHotKey(AddHotKey {
+                    new_hot_key: Some(key).map(PrincipalId),
+                })),
+            }),
+        )
+        .await?;
+        Ok(())
     }
 
     async fn enable_auto_merge_maturity(&self, neuron_id: u64) -> anyhow::Result<()> {
-            self.manage_neuron(
-                neuron_id,
-                Command::Configure(Configure {
-                    operation: Some(Operation::ChangeAutoStakeMaturity(ChangeAutoStakeMaturity {
+        self.manage_neuron(
+            neuron_id,
+            Command::Configure(Configure {
+                operation: Some(Operation::ChangeAutoStakeMaturity(
+                    ChangeAutoStakeMaturity {
                         requested_setting_for_auto_stake_maturity: true,
-                    })),
-                }),
-            )
-            .await?;
-            Ok(())
+                    },
+                )),
+            }),
+        )
+        .await?;
+        Ok(())
     }
 
     fn account_id(&self) -> anyhow::Result<AccountIdentifier> {

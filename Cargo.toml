@@ -14,15 +14,17 @@ anyhow = "1.0.34"
 async-trait = "0.1.68"
 candid = "0.8.4"
 ic-agent = "0.23.2"
-ic-types = "0.4.1"
 ic-base-types = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
+ic-nns-common = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
+ic-nns-governance = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
 icp-ledger = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
+ic-types = "0.4.1"
 ledger-canister = { git = "https://github.com/dfinity/ic", rev = "1ce7e5b0bd68760382eb2b3b810a11bd600770be" }
-tokio = { version = "1", features = ["full"] }
-serde = { version = "1.0.130", features = ["derive"] }
 serde_bytes = "0.11.2"
 serde_cbor = "0.11.2"
 serde_json = "1.0.57"
+serde = { version = "1.0.130", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
 
 # forces reqwest to be >0.11.6 to avoid issues in agent-rs
 reqwest = "0.11.10"
