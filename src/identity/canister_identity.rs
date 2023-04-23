@@ -29,6 +29,7 @@ struct SignatureReply {
 pub struct CanisterIdentity {
     pub canister: Principal,
     pub identity: Arc<dyn Identity>,
+    pub ic_url: String,
     pub fetch_root_key: bool,
     pub handle: Handle,
 }
@@ -37,12 +38,14 @@ impl CanisterIdentity {
     pub fn new(
         canister: Principal,
         identity: Arc<dyn Identity>,
+        ic_url: String,
         fetch_root_key: bool,
         handle: Handle,
     ) -> Self {
         Self {
             canister,
             identity,
+            ic_url,
             fetch_root_key,
             handle,
         }
@@ -56,11 +59,12 @@ impl CanisterIdentity {
         let (tx, rx) = channel::bounded(1);
         let identity = self.identity.clone();
         let canister = self.canister.clone();
+        let ic_url = self.ic_url.clone();
         let fetch_root_key = self.fetch_root_key.clone();
         let arg_bytes = Encode!(&arg).map_err(|e| format!("{e}"))?;
         let method = method_name.to_string();
         self.handle.spawn(async move {
-            let agent = get_agent_async(identity, fetch_root_key).await;
+            let agent = get_agent_async(identity, &ic_url, fetch_root_key).await;
             let _ = tx.send(match agent {
                 Err(e) => Err(e),
                 Ok(agent) => agent
@@ -109,12 +113,12 @@ impl Identity for CanisterIdentity {
     }
 }
 
-fn get_agent(identity: Arc<dyn Identity>) -> anyhow::Result<Agent> {
+fn get_agent(identity: Arc<dyn Identity>, ic_url: &str) -> anyhow::Result<Agent> {
     let timeout = std::time::Duration::from_secs(60 * 5);
     Agent::builder()
         .with_transport(
             ic_agent::agent::http_transport::ReqwestHttpReplicaV2Transport::create({
-                get_ic_url()
+                ic_url
             })?,
         )
         .with_ingress_expiry(Some(timeout))
@@ -123,17 +127,12 @@ fn get_agent(identity: Arc<dyn Identity>) -> anyhow::Result<Agent> {
         .map_err(|err| anyhow!(err))
 }
 
-const IC_URL: &str = "https://ic0.app";
-
-fn get_ic_url() -> String {
-    std::env::var("IC_URL").unwrap_or_else(|_| IC_URL.to_string())
-}
-
 async fn get_agent_async(
     identity: Arc<dyn Identity>,
+    ic_url: &str,
     fetch_root_key: bool,
 ) -> anyhow::Result<Agent> {
-    let agent = get_agent(identity)?;
+    let agent = get_agent(identity, ic_url)?;
     if fetch_root_key {
         agent.fetch_root_key().await?;
     }

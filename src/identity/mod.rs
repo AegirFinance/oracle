@@ -80,10 +80,11 @@ impl IdentityArgs {
         };
         // Wrap this in a canister-signer
         Ok(AuthInfo::Canister(CanisterInfo {
-            signer: Principal::from_text(&self.signing_canister)?,
-            local: Arc::from(get_identity(&local)?),
             fetch_root_key: self.should_fetch_root_key(),
             handle,
+            ic_url: self.ic_url.clone(),
+            local: Arc::from(get_identity(&local)?),
+            signer: Principal::from_text(&self.signing_canister)?,
         }))
     }
 
@@ -97,10 +98,11 @@ impl IdentityArgs {
 
 #[derive(Debug)]
 pub struct CanisterInfo {
-    pub signer: Principal,
-    pub local: Arc<dyn Identity>,
     pub fetch_root_key: bool,
     pub handle: tokio::runtime::Handle,
+    pub ic_url: String,
+    pub local: Arc<dyn Identity>,
+    pub signer: Principal,
 }
 
 #[derive(Debug)]
@@ -125,6 +127,7 @@ pub fn get_identity(auth: &AuthInfo) -> anyhow::Result<Box<dyn Identity>> {
         AuthInfo::Canister(info) => Ok(Box::new(canister_identity::CanisterIdentity::new(
             info.signer,
             info.local.clone(),
+            info.ic_url.clone(),
             info.fetch_root_key,
             info.handle.clone(),
         ))),
