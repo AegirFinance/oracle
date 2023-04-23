@@ -51,8 +51,19 @@ impl IdentityArgs {
     }
 
     pub async fn create_agent(&self) -> anyhow::Result<Agent> {
+        self.create_agent_for_auth(self.get_auth()?).await
+    }
+
+    // Create an agent with no canister signing, only the local key
+    pub async fn create_local_agent(&self) -> anyhow::Result<Agent> {
+        self.create_agent_for_auth(match &self.private_pem {
+            Some(pem_file) => AuthInfo::PemFile(read_file(pem_file, "PEM")?),
+            None => AuthInfo::NoAuth,
+        }).await
+    }
+
+    async fn create_agent_for_auth(&self, auth: AuthInfo) -> anyhow::Result<Agent> {
         let timeout = Duration::from_secs(60 * 5);
-        let auth = self.get_auth()?;
         let identity = get_identity(&auth)?;
         let agent = Agent::builder()
             .with_transport(

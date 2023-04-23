@@ -56,11 +56,6 @@ pub struct RefreshNeuronsAndApplyInterestResult {
 }
 
 #[derive(CandidType)]
-pub struct ResetArgs {
-    ids: Vec<u64>,
-}
-
-#[derive(CandidType)]
 pub struct FlushPendingDepositsArgs { }
 
 #[async_trait]
@@ -82,9 +77,7 @@ impl Service for Agent<'_> {
         self
             .agent
             .update(&self.canister_id, "resetStakingNeurons")
-            .with_arg(&Encode!(&ResetArgs {
-                ids: new_staking_neuron_ids.clone(),
-            })?)
+            .with_arg(&Encode!(&new_staking_neuron_ids.clone())?)
             .call_and_wait()
             .await?;
         Ok(())
