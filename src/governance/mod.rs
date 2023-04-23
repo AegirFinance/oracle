@@ -35,7 +35,7 @@ pub trait Service {
         neurons_to_split: Vec<(u64, u64)>,
     ) -> anyhow::Result<()>;
 
-    async fn claim_neuron(&self, memo: u64) -> anyhow::Result<u64>;
+    async fn claim_neuron(&self, controller: Option<Principal>, memo: u64) -> anyhow::Result<u64>;
     async fn increase_neuron_delay(&self, neuron_id: u64, additional_dissolve_delay_seconds: u32) -> anyhow::Result<()>;
     async fn add_hotkey(&self, neuron_id: u64, key: Principal) -> anyhow::Result<()>;
     async fn enable_auto_merge_maturity(&self, neuron_id: u64) -> anyhow::Result<()>;
@@ -144,14 +144,11 @@ impl Service for Agent<'_> {
         Ok(())
     }
 
-    async fn claim_neuron(&self, memo: u64) -> anyhow::Result<u64> {
+    async fn claim_neuron(&self, controller: Option<Principal>, memo: u64) -> anyhow::Result<u64> {
         let response = self
             .agent
             .update(&self.canister_id, "claim_or_refresh_neuron_from_account")
-            .with_arg(&Encode!(&ClaimOrRefreshNeuronFromAccount {
-                controller: None,
-                memo,
-            })?)
+            .with_arg(&Encode!(&ClaimOrRefreshNeuronFromAccount { controller, memo })?)
             .call_and_wait()
             .await?;
 
@@ -160,7 +157,7 @@ impl Service for Agent<'_> {
             bail!("Unexpected result claiming neuron, memo: {}", memo);
         };
         match inner {
-            Result_1::Error(_err) => bail!("Error claiming neuron, memo: {}", memo),
+            Result_1::Error(err) => bail!("Error claiming neuron, memo: {}, err: {}", memo, err.error_message),
             Result_1::NeuronId(NeuronId { id }) => Ok(id),
         }
     }

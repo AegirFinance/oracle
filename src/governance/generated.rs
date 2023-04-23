@@ -120,8 +120,8 @@ pub struct NeuronStakeTransfer {
 #[derive(CandidType, Deserialize)]
 #[derive(Clone, PartialEq)]
 pub struct GovernanceError {
-    error_message: String,
-    error_type: i32,
+    pub error_message: String,
+    pub error_type: i32,
 }
 
 #[derive(CandidType, Deserialize)]

@@ -88,10 +88,11 @@ impl IdentityArgs {
         }))
     }
 
-    pub fn account_id(&self) -> anyhow::Result<AccountIdentifier> {
-        PrincipalId::from_str(&self.signing_canister)
-            .map(|p| AccountIdentifier::new(p, None))
-            .map_err(|err| anyhow!(err))
+    pub async fn account_id(&self) -> anyhow::Result<AccountIdentifier> {
+        let auth = self.get_auth()?;
+        let identity = get_identity(&auth)?;
+        let principal = identity.sender().map_err(|e| anyhow!(e))?;
+        Ok(AccountIdentifier::new(principal.into(), None))
     }
 }
 
