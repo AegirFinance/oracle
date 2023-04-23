@@ -43,8 +43,8 @@ impl Command {
             canister_id: governance_principal,
         };
 
-        let signing_principal = Principal::from_text(&self.identity.signing_canister)?;
-        let identity_account_id = self.identity.account_id().await?;
+        let identity_principal = self.identity.principal().await?;
+        let identity_account_id = AccountIdentifier::new(identity_principal.into(), None);
 
         let icp = ledger::Agent {
             agent: &agent,
@@ -74,13 +74,13 @@ impl Command {
             // Pick a random memo
             let memo: u64 = rng.gen();
             println!("Delay: {}, Memo: {}", delay, memo);
-            let address = neuron_account_id(governance_principal, signing_principal, memo)?;
+            let address = neuron_account_id(governance_principal, identity_principal, memo)?;
             // Transfer 1 ICP
             println!("Transferring 1 ICP to: {}", address.to_hex());
             let height = icp.transfer(address, 100_000_000, memo).await?;
             println!("Transferred at block height: {}", height);
             // Create the neuron
-            let neuron_id = g.claim_neuron(Some(signing_principal), memo).await?;
+            let neuron_id = g.claim_neuron(Some(identity_principal), memo).await?;
             println!("Created Neuron: {}", neuron_id);
             new_neuron_ids.push(neuron_id);
             g.increase_neuron_delay(neuron_id, *delay).await?;
