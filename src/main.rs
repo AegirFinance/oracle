@@ -19,7 +19,6 @@ async fn main() -> anyhow::Result<()> {
     match &cli.command {
         commands::Command::Daily(c) => c.run().await?,
         commands::Command::MakeNeuron(c) => c.run().await?,
-        commands::Command::Setup(c) => c.run().await?,
     }
     Ok(())
 }
