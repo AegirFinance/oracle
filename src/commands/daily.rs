@@ -18,7 +18,7 @@ impl Command {
     pub async fn run(&self) -> anyhow::Result<()> {
         let agent = self.identity.create_agent().await?;
 
-        let deposits_canister_id = Principal::from_text(&self.identity.deposits)?;
+        let deposits_canister_id = Principal::from_text(&self.identity.deposits_canister)?;
         let d = deposits::Agent {
             agent: &agent,
             canister_id: deposits_canister_id,

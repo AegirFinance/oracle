@@ -31,7 +31,7 @@ impl Command {
         let mut rng = rand::thread_rng();
         let agent = self.identity.create_agent().await?;
 
-        let deposits_principal = Principal::from_text(&self.identity.deposits)?;
+        let deposits_principal = Principal::from_text(&self.identity.deposits_canister)?;
         let d = deposits::Agent {
             agent: &agent,
             canister_id: deposits_principal,

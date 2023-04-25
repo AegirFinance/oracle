@@ -34,7 +34,7 @@ pub struct IdentityArgs {
 
     /// Principal of the deposits canister
     #[arg(long, default_value = DEFAULT_DEPOSITS_CANISTER_ID)]
-    pub deposits: String,
+    pub deposits_canister: String,
 
     /// Principal of the governance canister
     #[arg(long, default_value = DEFAULT_GOVERNANCE_CANISTER_ID)]
