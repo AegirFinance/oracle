@@ -45,24 +45,21 @@ pub struct Agent<'a> {
 #[derive(CandidType)]
 pub struct RefreshNeuronsAndApplyInterestArgs {}
 
-#[derive(CandidType, Deserialize)]
-pub struct RefreshNeuronsAndApplyInterestResult {
-    neurons_to_split: Vec<(u64, u64)>,
-}
+pub type RefreshNeuronsAndApplyInterestResult = Vec<(u64, u64)>;
 
 #[async_trait]
 impl Service for Agent<'_> {
     async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64)>> {
         let response = self
             .agent
-            .update(&self.canister_id, "refresh_neurons_and_apply_interest")
+            .update(&self.canister_id, "refreshNeuronsAndApplyInterest")
             .with_arg(&Encode!(&RefreshNeuronsAndApplyInterestArgs {})?)
             .call_and_wait()
             .await?;
 
         let result = Decode!(response.as_slice(), RefreshNeuronsAndApplyInterestResult)
             .map_err(|err| anyhow!(err))?;
-        Ok(result.neurons_to_split)
+        Ok(result)
     }
 
     fn account_id(&self) -> anyhow::Result<AccountIdentifier> {

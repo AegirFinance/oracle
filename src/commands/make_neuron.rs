@@ -29,12 +29,12 @@ pub struct Command {
     /// Delay to set on the neuron,
     #[arg(long, default_value = "0")]
     delay: u32,
-
 }
 
 impl Command {
     pub async fn run(&self) -> anyhow::Result<()> {
         let agent = self.identity.create_agent().await?;
+        let local_agent = self.identity.create_local_agent().await?;
 
         let deposits_principal = Principal::from_text(&self.identity.deposits_canister)?;
 
@@ -47,7 +47,7 @@ impl Command {
         let identity_principal = self.identity.principal().await?;
 
         let icp = ledger::Agent {
-            agent: &agent,
+            agent: &local_agent,
             canister_id: Principal::from_text(&self.icp_ledger)?,
         };
 
