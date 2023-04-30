@@ -32,7 +32,6 @@ pub trait Service {
     // 1. Query dissolving neurons total & pending total, to calculate dissolving target from the
     //    Deposits service
     // 2. Calculate which staking neurons to split and how much
-
     // 3. Split & dissolve new neurons as needed
     async fn split_new_withdrawal_neurons(
         &self,
@@ -58,7 +57,6 @@ pub struct Agent<'a> {
 }
 
 impl Agent<'_> {
-    // TODO: Load the args etc here from a local candid file
     async fn list_neurons(&self) -> anyhow::Result<Vec<Neuron>> {
         let response = self
             .agent
