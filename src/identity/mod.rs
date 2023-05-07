@@ -18,7 +18,7 @@ use tokio::runtime::Handle;
 
 mod canister_identity;
 
-const DEFAULT_IC_URL: &str = "https://ic0.app";
+const DEFAULT_IC_URL: &str = "https://icp0.io";
 const DEFAULT_DEPOSITS_CANISTER_ID: &str = "hnwvc-lyaaa-aaaal-aaf6q-cai";
 const DEFAULT_GOVERNANCE_CANISTER_ID: &str = "rrkah-fqaaa-aaaaa-aaaaq-cai";
 
