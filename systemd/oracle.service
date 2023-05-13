@@ -1,0 +1,9 @@
+[Unit]
+Description=Oracle daily job
+
+[Service]
+Type=simple
+ExecStart=%h/bin/daily.sh
+
+[Install]
+WantedBy=default.target
