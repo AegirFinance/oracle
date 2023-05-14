@@ -1,7 +1,7 @@
 [Unit]
 Description=Run the dailly job every day
-RefuseManualStart=no  # Allow manual starts
-RefuseManualStop=no   # Allow manual stops
+RefuseManualStart=false
+RefuseManualStop=false
 
 [Timer]
 #Execute job if it missed a run due to machine being off
