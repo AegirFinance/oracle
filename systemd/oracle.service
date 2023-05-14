@@ -3,7 +3,8 @@ Description=Oracle daily job
 
 [Service]
 Type=simple
-ExecStart=%h/bin/daily.sh
+EnvironmentFile=%h/.cargo/env
+ExecStart=%h/oracle/systemd/daily.sh
 
 [Install]
 WantedBy=default.target
