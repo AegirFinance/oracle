@@ -3,7 +3,9 @@ Description=Oracle daily job
 
 [Service]
 Type=simple
-EnvironmentFile=/root/.cargo/env
+Environment=PATH=/root/.cargo/bin:/root/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+Environment=HOME=/root
+WorkingDirectory=/root/StakedICP
 ExecStart=/root/oracle/systemd/daily.sh
 
 [Install]
