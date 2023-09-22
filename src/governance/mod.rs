@@ -107,6 +107,7 @@ impl Service for Agent<'_> {
             if now < dissolved_at {
                 continue;
             }
+            eprintln!("Disbursing neuron {} to {}", id, address);
             self.manage_neuron(
                 id,
                 Command::Disburse(Disburse {
@@ -126,6 +127,7 @@ impl Service for Agent<'_> {
         neurons_to_split: Vec<(u64, u64)>,
     ) -> anyhow::Result<()> {
         for (id, amount_e8s) in neurons_to_split.iter() {
+            eprintln!("Splitting neuron {}, amount {}", id, amount_e8s);
             let ManageNeuronResponse{
                 command: Some(manage_neuron_response::Command::Split(SplitResponse {
                     created_neuron_id: Some(NeuronId {
@@ -139,6 +141,7 @@ impl Service for Agent<'_> {
             .await? else {
                 bail!("Unexpected response when splitting neuron {}", id)
             };
+            eprintln!("Created new neuron {}", new_id);
 
             // Start the new neuron dissolving
             self.manage_neuron(
@@ -148,6 +151,7 @@ impl Service for Agent<'_> {
                 }),
             )
             .await?;
+            eprintln!("Started dissolving neuron {}", new_id);
         }
         Ok(())
     }
