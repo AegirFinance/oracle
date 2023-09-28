@@ -43,7 +43,12 @@ impl Command {
         let neurons_to_split = d.refresh_neurons_and_apply_interest().await?;
 
         eprintln!("Splitting {} neurons", neurons_to_split.len());
-        g.split_new_withdrawal_neurons(neurons_to_split).await?;
+        let neurons_to_replace = g.split_new_withdrawal_neurons(neurons_to_split).await?;
+
+        for (id, new_id) in neurons_to_replace.iter() {
+            d.replace_staking_neuron(id.clone(), new_id.clone()).await?;
+            eprintln!("Replaced neuron {} with new neuron {}", id, new_id);
+        }
 
         Ok(())
     }

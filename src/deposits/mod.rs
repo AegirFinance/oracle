@@ -31,7 +31,9 @@ pub trait Service {
     //
     // This is all done in a single call, so that it is more atomic (not fully), and there is less
     // back-and-forth between this script and the canister.
-    async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64)>>;
+    async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64, bool)>>;
+
+    async fn replace_staking_neuron(&self, old_id: u64, new_id: u64) -> anyhow::Result<()>;
 
     // Calculate the deposit canister's account id for disbursing neurons to
     fn account_id(&self) -> anyhow::Result<AccountIdentifier>;
@@ -45,11 +47,19 @@ pub struct Agent<'a> {
 #[derive(CandidType)]
 pub struct RefreshNeuronsAndApplyInterestArgs {}
 
-pub type RefreshNeuronsAndApplyInterestResult = Vec<(u64, u64)>;
+pub type RefreshNeuronsAndApplyInterestResult = Vec<(u64, u64, bool)>;
+
+#[derive(CandidType)]
+pub struct ReplaceNeuronArgs {
+    pub old_id: u64,
+    pub new_id: u64,
+}
+
+pub type ReplaceNeuronResult = ();
 
 #[async_trait]
 impl Service for Agent<'_> {
-    async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64)>> {
+    async fn refresh_neurons_and_apply_interest(&self) -> anyhow::Result<Vec<(u64, u64, bool)>> {
         let response = self
             .agent
             .update(&self.canister_id, "refreshNeuronsAndApplyInterest")
@@ -60,6 +70,16 @@ impl Service for Agent<'_> {
         let result = Decode!(response.as_slice(), RefreshNeuronsAndApplyInterestResult)
             .map_err(|err| anyhow!(err))?;
         Ok(result)
+    }
+
+    async fn replace_staking_neuron(&self, old_id: u64, new_id: u64) -> anyhow::Result<()> {
+        self
+            .agent
+            .update(&self.canister_id, "replaceStakingNeuron")
+            .with_arg(&Encode!(&ReplaceNeuronArgs { old_id, new_id })?)
+            .call_and_wait()
+            .await?;
+        Ok(())
     }
 
     fn account_id(&self) -> anyhow::Result<AccountIdentifier> {

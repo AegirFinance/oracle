@@ -35,8 +35,8 @@ pub trait Service {
     // 3. Split & dissolve new neurons as needed
     async fn split_new_withdrawal_neurons(
         &self,
-        neurons_to_split: Vec<(u64, u64)>,
-    ) -> anyhow::Result<()>;
+        neurons_to_split: Vec<(u64, u64, bool)>,
+    ) -> anyhow::Result<Vec<(u64, u64)>>;
 
     async fn claim_neuron(&self, controller: Option<Principal>, memo: u64) -> anyhow::Result<u64>;
     async fn increase_neuron_delay(
@@ -124,10 +124,11 @@ impl Service for Agent<'_> {
 
     async fn split_new_withdrawal_neurons(
         &self,
-        neurons_to_split: Vec<(u64, u64)>,
-    ) -> anyhow::Result<()> {
-        for (id, amount_e8s) in neurons_to_split.iter() {
-            eprintln!("Splitting neuron {}, amount {}", id, amount_e8s);
+        neurons_to_split: Vec<(u64, u64, bool)>,
+    ) -> anyhow::Result<Vec<(u64, u64)>> {
+        let mut replacements: Vec<(u64, u64)> = vec![];
+        for (id, amount_e8s, should_replace) in neurons_to_split.iter() {
+            eprintln!("Splitting neuron {}, amount {}, replacing {}", id, amount_e8s, should_replace);
             let ManageNeuronResponse{
                 command: Some(manage_neuron_response::Command::Split(SplitResponse {
                     created_neuron_id: Some(NeuronId {
@@ -143,17 +144,31 @@ impl Service for Agent<'_> {
             };
             eprintln!("Created new neuron {}", new_id);
 
-            // Start the new neuron dissolving
-            self.manage_neuron(
-                new_id,
-                Command::Configure(Configure {
-                    operation: Some(Operation::StartDissolving(StartDissolving {})),
-                }),
-            )
-            .await?;
-            eprintln!("Started dissolving neuron {}", new_id);
+            if *should_replace {
+                replacements.push((id.clone(), new_id));
+
+                // Start the old neuron dissolving
+                self.manage_neuron(
+                    id.clone(),
+                    Command::Configure(Configure {
+                        operation: Some(Operation::StartDissolving(StartDissolving {})),
+                    }),
+                )
+                .await?;
+                eprintln!("Started dissolving neuron {}", id);
+            } else {
+                // Start the new neuron dissolving
+                self.manage_neuron(
+                    new_id,
+                    Command::Configure(Configure {
+                        operation: Some(Operation::StartDissolving(StartDissolving {})),
+                    }),
+                )
+                .await?;
+                eprintln!("Started dissolving neuron {}", new_id);
+            }
         }
-        Ok(())
+        Ok(replacements)
     }
 
     async fn claim_neuron(&self, controller: Option<Principal>, memo: u64) -> anyhow::Result<u64> {
