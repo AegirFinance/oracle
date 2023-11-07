@@ -4,10 +4,13 @@ canister() {
     dfx canister --network ic "$@"
 }
 
-KEY="$(dfx identity export default)"
+echo Exporting identity
+IDENTITY_PEM="$(mktemp)"
+dfx identity export default > "$IDENTITY_PEM"
+echo pem: "$IDENTITY_PEM"
 
 oracle daily \
-    --private-pem <(echo "$KEY") \
+    --private-pem "$IDENTITY_PEM" \
     --deposits-canister "$(canister id deposits)" \
     --signing-canister "$(canister id signing)" \
     --governance "$(canister id nns-governance)"
