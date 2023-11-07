@@ -23,7 +23,7 @@ pub trait Service {
     // Disburse all disburseable neurons to the target address
     // 1. Fetch a list of any disburseable neurons from the governance service
     // 2. Disburse any disburseable neurons into the deposits canister
-    async fn disburse_neurons(&self, now: u64, address: &AccountIdentifier) -> anyhow::Result<()>;
+    async fn disburse_neurons(&self, address: &AccountIdentifier, neurons: &[u64]) -> anyhow::Result<()>;
 
     // Apply the given list of neuron splits, adding the given hotkeys to each new neuron, and
     // starting the new neurons dissolving.
@@ -35,8 +35,8 @@ pub trait Service {
     // 3. Split & dissolve new neurons as needed
     async fn split_new_withdrawal_neurons(
         &self,
-        neurons_to_split: Vec<(u64, u64)>,
-    ) -> anyhow::Result<()>;
+        neurons_to_split: Vec<(u64, u64, bool)>,
+    ) -> anyhow::Result<Vec<(u64, u64)>>;
 
     async fn claim_neuron(&self, controller: Option<Principal>, memo: u64) -> anyhow::Result<u64>;
     async fn increase_neuron_delay(
@@ -57,22 +57,6 @@ pub struct Agent<'a> {
 }
 
 impl Agent<'_> {
-    async fn list_neurons(&self) -> anyhow::Result<Vec<Neuron>> {
-        let response = self
-            .agent
-            .update(&self.canister_id, "list_neurons")
-            .with_arg(&Encode!(&ListNeurons {
-                neuron_ids: vec![],
-                include_neurons_readable_by_caller: true,
-            })?)
-            .call_and_wait()
-            .await?;
-
-        let result =
-            Decode!(response.as_slice(), ListNeuronsResponse).map_err(|err| anyhow!(err))?;
-        Ok(result.full_neurons)
-    }
-
     async fn manage_neuron(
         &self,
         id: u64,
@@ -95,20 +79,11 @@ impl Agent<'_> {
 
 #[async_trait]
 impl Service for Agent<'_> {
-    async fn disburse_neurons(&self, now: u64, address: &AccountIdentifier) -> anyhow::Result<()> {
-        let neurons = self.list_neurons().await?;
-        for n in neurons.iter() {
-            let Some(NeuronId { id }) = n.id else {
-                continue;
-            };
-            let Some(DissolveState::WhenDissolvedTimestampSeconds(dissolved_at)) = n.dissolve_state else {
-                continue;
-            };
-            if now < dissolved_at {
-                continue;
-            }
+    async fn disburse_neurons(&self, address: &AccountIdentifier, neurons: &[u64]) -> anyhow::Result<()> {
+        for id in neurons.iter() {
+            eprintln!("Disbursing neuron {} to {}", id, address);
             self.manage_neuron(
-                id,
+                id.clone(),
                 Command::Disburse(Disburse {
                     to_account: Some(icp_ledger::protobuf::AccountIdentifier {
                         hash: address.hash.try_into()?,
@@ -123,9 +98,11 @@ impl Service for Agent<'_> {
 
     async fn split_new_withdrawal_neurons(
         &self,
-        neurons_to_split: Vec<(u64, u64)>,
-    ) -> anyhow::Result<()> {
-        for (id, amount_e8s) in neurons_to_split.iter() {
+        neurons_to_split: Vec<(u64, u64, bool)>,
+    ) -> anyhow::Result<Vec<(u64, u64)>> {
+        let mut replacements: Vec<(u64, u64)> = vec![];
+        for (id, amount_e8s, should_replace) in neurons_to_split.iter() {
+            eprintln!("Splitting neuron {}, amount {}, replacing {}", id, amount_e8s, should_replace);
             let ManageNeuronResponse{
                 command: Some(manage_neuron_response::Command::Split(SplitResponse {
                     created_neuron_id: Some(NeuronId {
@@ -139,17 +116,33 @@ impl Service for Agent<'_> {
             .await? else {
                 bail!("Unexpected response when splitting neuron {}", id)
             };
+            eprintln!("Created new neuron {}", new_id);
 
-            // Start the new neuron dissolving
-            self.manage_neuron(
-                new_id,
-                Command::Configure(Configure {
-                    operation: Some(Operation::StartDissolving(StartDissolving {})),
-                }),
-            )
-            .await?;
+            if *should_replace {
+                replacements.push((id.clone(), new_id));
+
+                // Start the old neuron dissolving
+                self.manage_neuron(
+                    id.clone(),
+                    Command::Configure(Configure {
+                        operation: Some(Operation::StartDissolving(StartDissolving {})),
+                    }),
+                )
+                .await?;
+                eprintln!("Started dissolving neuron {}", id);
+            } else {
+                // Start the new neuron dissolving
+                self.manage_neuron(
+                    new_id,
+                    Command::Configure(Configure {
+                        operation: Some(Operation::StartDissolving(StartDissolving {})),
+                    }),
+                )
+                .await?;
+                eprintln!("Started dissolving neuron {}", new_id);
+            }
         }
-        Ok(())
+        Ok(replacements)
     }
 
     async fn claim_neuron(&self, controller: Option<Principal>, memo: u64) -> anyhow::Result<u64> {
