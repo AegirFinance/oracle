@@ -57,7 +57,7 @@ pub type ListNeuronsToDisburseResult = Vec<Neuron>;
 pub struct Neuron {
     pub id: u64,
     #[serde(rename = "accountId")]
-    pub account_id: AccountIdentifier,
+    pub account_id: Vec<u8>,
     #[serde(rename = "dissolveState")]
     pub dissolve_state: Option<DissolveState>,
     #[serde(rename = "cachedNeuronStakeE8s")]
