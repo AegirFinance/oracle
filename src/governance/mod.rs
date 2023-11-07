@@ -23,7 +23,7 @@ pub trait Service {
     // Disburse all disburseable neurons to the target address
     // 1. Fetch a list of any disburseable neurons from the governance service
     // 2. Disburse any disburseable neurons into the deposits canister
-    async fn disburse_neurons(&self, now: u64, address: &AccountIdentifier) -> anyhow::Result<()>;
+    async fn disburse_neurons(&self, address: &AccountIdentifier, neurons: &[u64]) -> anyhow::Result<()>;
 
     // Apply the given list of neuron splits, adding the given hotkeys to each new neuron, and
     // starting the new neurons dissolving.
@@ -57,22 +57,6 @@ pub struct Agent<'a> {
 }
 
 impl Agent<'_> {
-    async fn list_neurons(&self) -> anyhow::Result<Vec<Neuron>> {
-        let response = self
-            .agent
-            .update(&self.canister_id, "list_neurons")
-            .with_arg(&Encode!(&ListNeurons {
-                neuron_ids: vec![],
-                include_neurons_readable_by_caller: true,
-            })?)
-            .call_and_wait()
-            .await?;
-
-        let result =
-            Decode!(response.as_slice(), ListNeuronsResponse).map_err(|err| anyhow!(err))?;
-        Ok(result.full_neurons)
-    }
-
     async fn manage_neuron(
         &self,
         id: u64,
@@ -95,21 +79,11 @@ impl Agent<'_> {
 
 #[async_trait]
 impl Service for Agent<'_> {
-    async fn disburse_neurons(&self, now: u64, address: &AccountIdentifier) -> anyhow::Result<()> {
-        let neurons = self.list_neurons().await?;
-        for n in neurons.iter() {
-            let Some(NeuronId { id }) = n.id else {
-                continue;
-            };
-            let Some(DissolveState::WhenDissolvedTimestampSeconds(dissolved_at)) = n.dissolve_state else {
-                continue;
-            };
-            if now < dissolved_at {
-                continue;
-            }
+    async fn disburse_neurons(&self, address: &AccountIdentifier, neurons: &[u64]) -> anyhow::Result<()> {
+        for id in neurons.iter() {
             eprintln!("Disbursing neuron {} to {}", id, address);
             self.manage_neuron(
-                id,
+                id.clone(),
                 Command::Disburse(Disburse {
                     to_account: Some(icp_ledger::protobuf::AccountIdentifier {
                         hash: address.hash.try_into()?,

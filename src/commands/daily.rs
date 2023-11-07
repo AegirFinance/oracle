@@ -36,7 +36,9 @@ impl Command {
 
         // Disburse any pending neurons
         eprintln!("Disbursing any pending neurons");
-        g.disburse_neurons(now, &deposits_address).await?;
+        let neurons_to_disburse = d.list_neurons_to_disburse(now).await?;
+        eprintln!("Found {} neurons to disburse", neurons_to_disburse.len());
+        g.disburse_neurons(&deposits_address, &neurons_to_disburse).await?;
 
         // Run canister updates and figure out which neurons to split
         eprintln!("Refreshing staking neurons and applying interest");
